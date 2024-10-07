@@ -45,7 +45,7 @@ fetch('data/updated_data.json')
                     dashArray: '3',
                     dashOffset: '0'
                 }).addTo(map)
-                    .bindPopup(`<a href="http://https://timamik.github.io/MapProductsDCUT/table.html?id=${encodeURIComponent(org.name)}" target="_blank"><b>${org.name}</b></a><br>${loc.description1}: шт. <br>${description2.toLocaleString('ru-RU', { style: 'currency', currency :'RUB'})}<br>${loc.address}</br>`);
+                    .bindPopup(`<a href="http://timamik.github.io/MapProductsDCUT/table.html?id=${encodeURIComponent(org.name)}" target="_blank"><b>${org.name}</b></a><br>${loc.description1}: шт. <br>${description2.toLocaleString('ru-RU', { style: 'currency', currency :'RUB'})}<br>${loc.address}</br>`);
 
             });
         });
