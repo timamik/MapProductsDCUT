@@ -2,7 +2,7 @@ import requests
 import pdb
 import time 
 # Твой API-ключ Яндекс
-API_KEY = '6bf6512c-a7c9-423d-8d7d-9c4ec5128a98'
+API_KEY = 'КЛЮЧ'
 YANDEX_GEOCODER_URL = 'https://geocode-maps.yandex.ru/1.x/'
 
 def get_coordinates(address):
