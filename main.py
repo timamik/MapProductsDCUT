@@ -1,6 +1,7 @@
 from openpyxl import load_workbook
 import sys
 import io
+import pdb
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
@@ -20,6 +21,8 @@ for row in ws.iter_rows(min_row=1, max_col=4):
     first_col_font_color = cell.font.color.rgb if cell.font.color else None
     third_col_value = row[2].value  # Количество штук
     fourth_col_value = row[3].value  # Выручка
+    #pdb.set_trace()
+    print (str(cell.value) + "   " + str(first_col_font_size) +"    " + str(first_col_font_color))
 
     # 1. Если шрифт 10 в первой колонке — это название структуры
     if first_col_font_size == 10:
@@ -27,7 +30,8 @@ for row in ws.iter_rows(min_row=1, max_col=4):
         structure[current_structure_name] = {}
 
     # 2. Если шрифт 8 и цвет черный в первой колонке — это адрес
-    elif first_col_font_size == 8 and first_col_font_color == 'FF000000':  # Черный цвет
+    elif first_col_font_size == 8 and first_col_font_color ==  None:  # Черный цвет
+        #pdb.set_trace()
         current_address = cell.value
         if current_address not in structure[current_structure_name]:
             # Инициализируем массив для количества и выручки

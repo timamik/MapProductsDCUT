@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Таблица данных</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 18px;
+            text-align: left;
+        }
+        table, th, td {
+            border: 1px solid #dddddd;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr {
+            background-color: #f9f9f9;
+        }
+        .highlight {
+            background-color: yellow;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Данные организаций</h1>
+    <table id="data-table">
+        <thead>
+            <tr>
+                <th>Название организации</th>
+                <th>Адрес</th> <!-- Новый столбец для адреса -->
+                <th>Широта</th>
+                <th>Долгота</th>
+                <th>Шт.</th>
+                <th>Выручка</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Данные будут добавлены здесь -->
+        </tbody>
+    </table>
+
+    <script>
+        // Получаем параметр id из URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const orgName = urlParams.get('id');
+        let highlightedRow = null;
+
+        // Загружаем JSON с данными
+        fetch('data/updated_data.json')
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.getElementById('data-table').getElementsByTagName('tbody')[0];
+
+                // Добавляем все организации в таблицу
+                data.forEach(org => {
+                    org.locations.forEach(loc => {
+                        const row = tableBody.insertRow();
+
+                        const nameCell = row.insertCell(0);
+                        const addressCell = row.insertCell(1); // Ячейка для адреса
+                        const latCell = row.insertCell(2);
+                        const lonCell = row.insertCell(3);
+                        const description1Cell = row.insertCell(4);
+                        const description2Cell = row.insertCell(5);
+
+
+                        // Заполняем ячейки данными
+                        nameCell.textContent = org.name;
+                        addressCell.textContent = loc.address || 'Адрес не указан'; // Заполняем адрес или сообщение, если его нет
+                        latCell.textContent = loc.latitude;
+                        lonCell.textContent = loc.longitude;
+                        description1Cell.textContent = loc.description1;
+                        description2Cell.textContent = parseFloat(loc.description2).toLocaleString('ru-RU', { style: 'currency', currency: 'RUB' });
+                        
+
+                        // Если id указан и соответствует текущей организации, подсвечиваем строку
+                        if (org.name === orgName) {
+                            row.classList.add('highlight');
+                            highlightedRow = row; // Сохраняем ссылку на выделенную строку
+                        }
+                    });
+                });
+
+                // Если параметр id есть, но организация не найдена
+                if (orgName && !data.some(org => org.name === orgName)) {
+                    document.getElementById('data-table').insertAdjacentHTML('afterend', '<p>Организация не найдена</p>');
+                }
+
+                // Прокручиваем таблицу до нужной строки, если она была найдена
+                if (highlightedRow) {
+                    highlightedRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при загрузке данных:', error);
+            });
+    </script>
+
+</body>
+</html>

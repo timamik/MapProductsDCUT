@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Styled Excel to HTML Table with Merged Cells Handling</title>
+    <style>
+        /* Основной стиль таблицы */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            vertical-align: middle;
+            width: 150px; /* Фиксированная ширина для ячеек */
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        /* Стили пустых клеток */
+        td.empty {
+            background-color: #fff3cd; /* Светло-желтый цвет для пустых ячеек */
+        }
+        /* Стили числовых данных */
+        td.numeric {
+            text-align: right;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<h2>Upload Excel File</h2>
+<input type="file" id="input-excel" />
+
+<!-- Таблица для отображения данных -->
+<table id="excel-table">
+    <thead id="table-head"></thead>
+    <tbody id="table-body"></tbody>
+</table>
+
+<script>
+    document.getElementById('input-excel').addEventListener('change', handleFile, false);
+
+    function handleFile(e) {
+        var file = e.target.files[0];
+        var reader = new FileReader();
+
+        reader.onload = function(event) {
+            var data = new Uint8Array(event.target.result);
+            var workbook = XLSX.read(data, {type: 'array'});
+
+            // Предполагаем, что данные находятся на первом листе
+            var firstSheetName = workbook.SheetNames[0];
+            var worksheet = workbook.Sheets[firstSheetName];
+
+            // Получаем информацию о объединённых ячейках
+            var merges = worksheet['!merges'] || [];
+
+            // Преобразуем лист в массив массивов (сохранение пустых ячеек)
+            var jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1, blankrows: true});
+
+            // Вставляем заголовки
+            var tableHead = document.getElementById("table-head");
+            var tableBody = document.getElementById("table-body");
+            tableHead.innerHTML = "";
+            tableBody.innerHTML = "";
+
+            // Обработка заголовков
+            var headers = jsonData[0];
+            var headerRow = document.createElement('tr');
+            headers.forEach(header => {
+                var th = document.createElement('th');
+                th.textContent = header || "";  // Оставляем пустую ячейку, если заголовок пустой
+                headerRow.appendChild(th);
+            });
+            tableHead.appendChild(headerRow);
+
+            // Создаем карту объединённых ячеек
+            var mergeMap = {};
+            merges.forEach(function(merge) {
+                for (var R = merge.s.r; R <= merge.e.r; ++R) {
+                    for (var C = merge.s.c; C <= merge.e.c; ++C) {
+                        if (R === merge.s.r && C === merge.s.c) continue; // Пропускаем стартовую ячейку
+                        mergeMap[`${R}-${C}`] = {r: merge.s.r, c: merge.s.c};
+                    }
+                }
+            });
+
+            // Вставляем строки с учетом пустых и объединенных ячеек
+            jsonData.slice(1).forEach((row, rowIndex) => {
+                var rowElement = document.createElement('tr');
+                row.forEach((cell, cellIndex) => {
+                    var td = document.createElement('td');
+                    var mergeKey = `${rowIndex + 1}-${cellIndex}`;  // Ключ для объединённых ячеек
+
+                    // Если ячейка была объединена, используем данные из стартовой ячейки объединения
+                    if (mergeMap[mergeKey]) {
+                        var mergeData = jsonData[mergeMap[mergeKey].r + 1][mergeMap[mergeKey].c];
+                        td.textContent = mergeData || "";
+                    } else {
+                        td.textContent = cell || "";
+                    }
+
+                    // Если ячейка пустая
+                    if (cell === undefined || cell === null || cell === "") {
+                        td.classList.add('empty');  // Пустые клетки получают специальный класс
+                    } else {
+                        // Добавляем стиль для числовых данных
+                        if (!isNaN(cell)) {
+                            td.classList.add('numeric');
+                        }
+                    }
+                    rowElement.appendChild(td);
+                });
+                tableBody.appendChild(rowElement);
+            });
+        };
+
+        reader.readAsArrayBuffer(file);
+    }
+</script>
+
+</body>
+</html>

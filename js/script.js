@@ -1,31 +1,55 @@
-// Инициализируем карту
 var map = L.map('map', {
-    attributionControl: false  // Отключаем атрибуцию
-}).setView([55.751244, 37.618423], 10);
+    attributionControl: false
+}).setView([55.751244, 37.618423], 10); // Координаты центра Москвы и уровень масштабирования 11
+
 
 // Добавляем тайлы карты
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
 }).addTo(map);
 
-// Добавляем маркер с popup и измененными размерами окна
-var circle = L.circle([55.751244, 37.618423], {
-    color: 'blue',      // Цвет контура
-    fillColor: '#30f',  // Цвет заливки
-    fillOpacity: 0.5,   // Прозрачность заливки
-    radius: 10         // Радиус круга в метрах
-}).addTo(map);
+// Функция для расчета размера маркера на основе description2
+function calculateSize(description2, minVal, maxVal) {
+    return 5 + ((description2 - minVal) / (maxVal - minVal)) * 25;
+}
 
-// Создаем круг с небольшим радиусом
-circle.bindTooltip("Это круг", {
-    permanent: true,   // Метка всегда видима
-    direction: 'top',  // Позиция метки - сверху маркера
-    offset: [0, 0]   // Отступ для лучшего позиционирования
-}).openTooltip();
-/*
-marker.bindPopup("<b>232323</b>", {
-    maxWidth: 300,  // Устанавливаем максимальную ширину через Leaflet
-    minWidth: 200,  // Минимальная ширина окна
-    maxHeight: 200  // Максимальная высота
-}).openPopup();
-*/
+// Функция для расчета цвета на основе description2
+function calculateColor(description2, minVal, maxVal) {
+    var intensity = (description2 - minVal) / (maxVal - minVal);
+    var red = Math.floor(255 * intensity);
+    return `rgb(${red}, 100, 150)`;
+}
+
+// Загружаем JSON с данными
+fetch('data/updated_data.json')
+    .then(response => response.json())
+    .then(data => {
+        var minDescription2 = Math.min(...data.flatMap(org => org.locations.map(loc => parseFloat(loc.description2))));
+        var maxDescription2 = Math.max(...data.flatMap(org => org.locations.map(loc => parseFloat(loc.description2))));
+
+        // Добавляем маркеры на карту
+        data.forEach(function(org) {
+            org.locations.forEach(function(loc) {
+                var description2 = parseFloat(loc.description2);
+                var size = calculateSize(description2, minDescription2, maxDescription2);
+                var color = calculateColor(description2, minDescription2, maxDescription2);
+
+                // Добавляем маркер с динамическим стилем
+                var marker = L.circleMarker([loc.latitude, loc.longitude], {
+                    radius: size,
+                    color: color,
+                    fillColor: color,
+                    fillOpacity: 0.5,
+                    weight: 2,
+                    opacity: 1,
+                    dashArray: '3',
+                    dashOffset: '0'
+                }).addTo(map)
+                    .bindPopup(`<a href="http://localhost:8000/table.html?id=${encodeURIComponent(org.name)}" target="_blank"><b>${org.name}</b></a><br>${loc.description1}: шт. <br>${description2.toLocaleString('ru-RU', { style: 'currency', currency :'RUB'})}<br>${loc.address}</br>`);
+
+            });
+        });
+    })
+    .catch(error => {
+        console.error('Ошибка при загрузке JSON:', error);
+    });
